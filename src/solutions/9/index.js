@@ -53,6 +53,43 @@ const applyMove = (direction, rope) => {
   }
 };
 
+const BOARD_SIZE = 50;
+const renderBoard = (rope, visited) => {
+  const lines = [
+    _.range(2 * BOARD_SIZE + 3)
+      .map(() => "-")
+      .join(""),
+  ];
+  for (let y = -BOARD_SIZE; y <= BOARD_SIZE; y++) {
+    let line = ["|"];
+    for (let x = -BOARD_SIZE; x <= BOARD_SIZE; x++) {
+      let found = false;
+      for (let i = 0; i < rope.length; i++) {
+        if (rope[i].x == x && rope[i].y == y) {
+          line.push(i === 0 ? "H" : `${i}`);
+          found = true;
+          break;
+        }
+      }
+      if (!found) {
+        if (visited.has(key({ x, y }))) {
+          line.push("#");
+        } else {
+          line.push(" ");
+        }
+      }
+    }
+    line.push("|");
+    lines.push(line.join(""));
+  }
+  lines.push(
+    _.range(2 * BOARD_SIZE + 3)
+      .map(() => "-")
+      .join(""),
+  );
+  return lines.join("\n");
+};
+
 const part1 = async () => {
   const input = await readInput();
   const commands = parse(input);
