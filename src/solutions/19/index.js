@@ -118,8 +118,7 @@ const maxRobotsNeeded = memoize(
   (blueprint, type) => `${blueprint.id}:${type}`,
 );
 
-const findMaxGeodes = (blueprint, time) => {
-  console.log("Considering blueprint", blueprint.id);
+const findMaxGeodes = (blueprint, time, allowSkip = false) => {
   const initialContext = {
     inventory: { ore: 0, clay: 0, obsidian: 0, geode: 0 },
     robots: { ore: 1, clay: 0, obsidian: 0, geode: 0 },
@@ -132,7 +131,6 @@ const findMaxGeodes = (blueprint, time) => {
 
   while (queue.length > 0) {
     const context = queue.pop();
-    // console.log(max, context);
 
     const h = hash(blueprint, context);
     const hasSeen = seen[h];
@@ -154,34 +152,34 @@ const findMaxGeodes = (blueprint, time) => {
     }
 
     if (canAfford(blueprint, "geode", context.inventory)) {
-      // console.log("Building geode robot");
       queue.push(buildRobot(blueprint, "geode", context));
-      // } else if (
-      //   canAfford(blueprint, "obsidian", context.inventory) &&
-      //   context.robots.obsidian < maxRobotsNeeded(blueprint, "obsidian")
-      // ) {
-      //   queue.push(buildRobot(blueprint, "obsidian", context));
     } else {
+      let canBuildAll = true;
       for (const type of ["ore", "clay", "obsidian"]) {
         if (context.robots[type] >= maxRobotsNeeded(blueprint, type)) {
           continue;
         } else if (canAfford(blueprint, type, context.inventory)) {
           queue.push(buildRobot(blueprint, type, context));
+        } else {
+          canBuildAll = false;
         }
       }
-      queue.push(doNothing(context));
+      if (!allowSkip || !canBuildAll) {
+        queue.push(doNothing(context));
+      }
     }
   }
-  console.log("Max output:", max);
   return max;
 };
 
 const part1 = async () => {
   const input = await readInput();
   const blueprints = parse(input);
-  // return findMaxGeodes(blueprints[7], 24);
   return _.sum(
-    blueprints.map((blueprint) => blueprint.id * findMaxGeodes(blueprint, 24)),
+    blueprints.map(
+      (blueprint) =>
+        blueprint.id * findMaxGeodes(blueprint, 24 /*blueprint.id !== 8*/),
+    ),
   );
 };
 
@@ -189,9 +187,9 @@ const part2 = async () => {
   const input = await readInput();
   const blueprints = parse(input);
   return (
-    findMaxGeodes(blueprints[0], 32) *
-    findMaxGeodes(blueprints[1], 32) *
-    findMaxGeodes(blueprints[2], 32)
+    findMaxGeodes(blueprints[0], 32, true) *
+    findMaxGeodes(blueprints[1], 32, true) *
+    findMaxGeodes(blueprints[2], 32, true)
   );
 };
 
